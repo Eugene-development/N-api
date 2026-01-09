@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Mebel extends Model
+class Category extends Model
 {
     use HasFactory, HasUlids, SoftDeletes, Sluggable;
 
     /**
      * Таблица модели
      */
-    protected $table = 'mebel';
+    protected $table = 'categories';
 
     /**
      * Поля, доступные для массового заполнения
@@ -23,6 +24,7 @@ class Mebel extends Model
     protected $fillable = [
         'value',
         'slug',
+        'rubric_id',
         'description',
         'bg',
         'is_active',
@@ -55,6 +57,14 @@ class Mebel extends Model
     ];
 
     /**
+     * Связь с рубрикой
+     */
+    public function rubric(): BelongsTo
+    {
+        return $this->belongsTo(Rubric::class);
+    }
+
+    /**
      * Настройка генерации slug
      */
     public function sluggable(): array
@@ -62,7 +72,7 @@ class Mebel extends Model
         return [
             'slug' => [
                 'source' => 'value',
-                'onUpdate' => true,
+                'onUpdate' => false,  // Не перезаписывать slug при обновлении
             ]
         ];
     }

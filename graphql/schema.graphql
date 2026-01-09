@@ -18,86 +18,125 @@ type Query {
       name: String @where(operator: "like")
     ): [User!]! @paginate(defaultCount: 10)
 
-    "Find a single mebel by ID."
-    mebel(id: ID! @eq): Mebel @find
+    "Find a single category by ID."
+    category(id: ID! @eq): Category @find
 
-    "List all mebel items."
-    mebels(
+    "List all categories."
+    categories(
       "Filter by active status."
       is_active: Boolean @eq
       "Include soft deleted items."
       trashed: Trashed @trashed
-    ): [Mebel!]! @all @orderBy(column: "sort_order", direction: ASC)
+      "Filter by rubric ID."
+      rubric_id: ID @eq
+    ): [Category!]! @all @orderBy(column: "sort_order", direction: ASC)
+
+    "Find a single rubric by ID."
+    rubric(id: ID! @eq): Rubric @find
+
+    "Find a rubric by slug."
+    rubricBySlug(slug: String! @eq): Rubric @find
+
+    "List all rubrics."
+    rubrics(
+      "Filter by active status."
+      is_active: Boolean @eq
+      "Include soft deleted items."
+      trashed: Trashed @trashed
+    ): [Rubric!]! @all @orderBy(column: "sort_order", direction: ASC)
 }
 
 "Mutations for modifying data."
 type Mutation {
-    "Create a new mebel item."
-    createMebel(input: CreateMebelInput! @spread): Mebel @create
+    "Create a new category."
+    createCategory(input: CreateCategoryInput! @spread): Category @create
 
-    "Update an existing mebel item."
-    updateMebel(id: ID!, input: UpdateMebelInput! @spread): Mebel @update
+    "Update an existing category."
+    updateCategory(id: ID!, input: UpdateCategoryInput! @spread): Category @update
 
-    "Soft delete a mebel item."
-    deleteMebel(id: ID! @whereKey): Mebel @delete
+    "Soft delete a category."
+    deleteCategory(id: ID! @whereKey): Category @delete
 
-    "Restore a soft deleted mebel item."
-    restoreMebel(id: ID! @whereKey): Mebel @restore
+    "Restore a soft deleted category."
+    restoreCategory(id: ID! @whereKey): Category @restore
 
-    "Force delete a mebel item."
-    forceDeleteMebel(id: ID! @whereKey): Mebel @forceDelete
+    "Force delete a category."
+    forceDeleteCategory(id: ID! @whereKey): Category @forceDelete
+
+    "Create a new rubric."
+    createRubric(input: CreateRubricInput! @spread): Rubric @create
+
+    "Update an existing rubric."
+    updateRubric(id: ID!, input: UpdateRubricInput! @spread): Rubric @update
+
+    "Soft delete a rubric."
+    deleteRubric(id: ID! @whereKey): Rubric @delete
+
+    "Restore a soft deleted rubric."
+    restoreRubric(id: ID! @whereKey): Rubric @restore
+
+    "Force delete a rubric."
+    forceDeleteRubric(id: ID! @whereKey): Rubric @forceDelete
 }
 
-"Input for creating a mebel item."
-input CreateMebelInput {
+"Input for creating a category."
+input CreateCategoryInput {
     value: String! @rules(apply: ["required", "string", "max:255"])
     slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    rubric_id: ID @rules(apply: ["exists:rubrics,id"])
     description: String
     bg: String
     is_active: Boolean
     sort_order: Int
 }
 
-"Input for updating a mebel item."
-input UpdateMebelInput {
+"Input for updating a category."
+input UpdateCategoryInput {
     value: String @rules(apply: ["string", "max:255"])
     slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    rubric_id: ID @rules(apply: ["exists:rubrics,id"])
     description: String
     bg: String
     is_active: Boolean
     sort_order: Int
 }
 
-"Mebel item for furniture management."
-type Mebel {
+"Category item for catalog management."
+type Category {
     "Unique ULID identifier."
     id: ID!
 
-    "Value/name of the item."
+    "Value/name of the category."
     value: String!
 
     "URL-friendly slug for links."
     slug: String!
 
-    "Description of the item."
+    "ID of the parent rubric."
+    rubric_id: ID
+
+    "Parent rubric."
+    rubric: Rubric @belongsTo
+
+    "Description of the category."
     description: String
 
     "Background color or image."
     bg: String
 
-    "Whether the item is active."
+    "Whether the category is active."
     is_active: Boolean!
 
     "Sort order for display."
     sort_order: Int!
 
-    "When the item was created."
+    "When the category was created."
     created_at: DateTime!
 
-    "When the item was last updated."
+    "When the category was last updated."
     updated_at: DateTime!
 
-    "When the item was soft deleted."
+    "When the category was soft deleted."
     deleted_at: DateTime
 }
 
@@ -122,3 +161,56 @@ type User {
     updated_at: DateTime!
 }
 
+"Rubric for categorizing items."
+type Rubric {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Unique key for external references."
+    key: ID!
+
+    "Name of the rubric."
+    value: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Description of the rubric."
+    description: String
+
+    "Whether the rubric is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "Categories in this rubric."
+    categories: [Category!]! @hasMany
+
+    "When the rubric was created."
+    created_at: DateTime!
+
+    "When the rubric was last updated."
+    updated_at: DateTime!
+
+    "When the rubric was soft deleted."
+    deleted_at: DateTime
+}
+
+"Input for creating a rubric."
+input CreateRubricInput {
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a rubric."
+input UpdateRubricInput {
+    value: String @rules(apply: ["string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    is_active: Boolean
+    sort_order: Int
+}
