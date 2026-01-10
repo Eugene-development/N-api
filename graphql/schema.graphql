@@ -37,6 +37,9 @@ type Query {
     "Find a rubric by slug."
     rubricBySlug(slug: String! @eq): Rubric @find
 
+    "Find a category by slug."
+    categoryBySlug(slug: String! @eq): Category @find
+
     "List all rubrics."
     rubrics(
       "Filter by active status."
