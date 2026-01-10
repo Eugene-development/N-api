@@ -1,6 +1,9 @@
 "A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
 scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
 
+"JSON scalar for arbitrary data."
+scalar JSON @scalar(class: "MLL\\GraphQLScalars\\JSON")
+
 "Indicates what fields are available at the top level of a query operation."
 type Query {
     "Find a single user by an identifying attribute."
@@ -47,6 +50,26 @@ type Query {
       "Include soft deleted items."
       trashed: Trashed @trashed
     ): [Rubric!]! @all @orderBy(column: "sort_order", direction: ASC)
+
+    "Find a single mebel project by ID."
+    mebelProject(id: ID! @eq): MebelProject @find
+
+    "Find a mebel project by slug."
+    mebelProjectBySlug(slug: String! @eq): MebelProject @find
+
+    "List all mebel projects."
+    mebelProjects(
+      "Filter by active status."
+      is_active: Boolean @eq
+      "Filter by category ID."
+      category_id: ID @eq
+      "Filter by featured status."
+      is_featured: Boolean @eq
+      "Filter by new status."
+      is_new: Boolean @eq
+      "Include soft deleted items."
+      trashed: Trashed @trashed
+    ): [MebelProject!]! @all @orderBy(column: "sort_order", direction: ASC)
 }
 
 "Mutations for modifying data."
@@ -80,6 +103,21 @@ type Mutation {
 
     "Force delete a rubric."
     forceDeleteRubric(id: ID! @whereKey): Rubric @forceDelete
+
+    "Create a new mebel project."
+    createMebelProject(input: CreateMebelProjectInput! @spread): MebelProject @create
+
+    "Update an existing mebel project."
+    updateMebelProject(id: ID!, input: UpdateMebelProjectInput! @spread): MebelProject @update
+
+    "Soft delete a mebel project."
+    deleteMebelProject(id: ID! @whereKey): MebelProject @delete
+
+    "Restore a soft deleted mebel project."
+    restoreMebelProject(id: ID! @whereKey): MebelProject @restore
+
+    "Force delete a mebel project."
+    forceDeleteMebelProject(id: ID! @whereKey): MebelProject @forceDelete
 }
 
 "Input for creating a category."
@@ -141,6 +179,9 @@ type Category {
 
     "When the category was soft deleted."
     deleted_at: DateTime
+
+    "Mebel projects in this category."
+    mebelProjects: [MebelProject!]! @hasMany
 }
 
 "Account of a person who uses this application."
@@ -215,5 +256,94 @@ input UpdateRubricInput {
     slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
     description: String
     is_active: Boolean
+    sort_order: Int
+}
+
+"Mebel project item for catalog."
+type MebelProject {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Unique key for external references."
+    key: ID!
+
+    "ID of the parent category."
+    category_id: ID!
+
+    "Parent category."
+    category: Category @belongsTo
+
+    "Name of the project."
+    value: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Description of the project."
+    description: String
+
+    "Short description."
+    short_description: String
+
+    "Price of the project."
+    price: Float
+
+    "Old price (for discounts)."
+    old_price: Float
+
+    "Meta data (SEO, etc.)."
+    meta: JSON
+
+    "Whether the project is active."
+    is_active: Boolean!
+
+    "Whether the project is featured."
+    is_featured: Boolean!
+
+    "Whether the project is new."
+    is_new: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the project was created."
+    created_at: DateTime!
+
+    "When the project was last updated."
+    updated_at: DateTime!
+
+    "When the project was soft deleted."
+    deleted_at: DateTime
+}
+
+"Input for creating a mebel project."
+input CreateMebelProjectInput {
+    category_id: ID! @rules(apply: ["required", "exists:categories,id"])
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    short_description: String
+    price: Float
+    old_price: Float
+    meta: JSON
+    is_active: Boolean
+    is_featured: Boolean
+    is_new: Boolean
+    sort_order: Int
+}
+
+"Input for updating a mebel project."
+input UpdateMebelProjectInput {
+    category_id: ID @rules(apply: ["exists:categories,id"])
+    value: String @rules(apply: ["string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    short_description: String
+    price: Float
+    old_price: Float
+    meta: JSON
+    is_active: Boolean
+    is_featured: Boolean
+    is_new: Boolean
     sort_order: Int
 }

@@ -8,27 +8,33 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
-class Category extends Model
+class MebelProject extends Model
 {
     use HasFactory, HasUlids, SoftDeletes, Sluggable;
 
     /**
      * Таблица модели
      */
-    protected $table = 'categories';
+    protected $table = 'mebel_projects';
 
     /**
      * Поля, доступные для массового заполнения
      */
     protected $fillable = [
+        'key',
+        'category_id',
         'value',
         'slug',
-        'rubric_id',
         'description',
-        'bg',
+        'short_description',
+        'price',
+        'old_price',
+        'meta',
         'is_active',
+        'is_featured',
+        'is_new',
         'sort_order',
         'created_by',
         'updated_by',
@@ -42,7 +48,12 @@ class Category extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_featured' => 'boolean',
+            'is_new' => 'boolean',
             'sort_order' => 'integer',
+            'price' => 'decimal:2',
+            'old_price' => 'decimal:2',
+            'meta' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
@@ -54,23 +65,31 @@ class Category extends Model
      */
     protected $attributes = [
         'is_active' => true,
+        'is_featured' => false,
+        'is_new' => false,
         'sort_order' => 0,
     ];
 
     /**
-     * Связь с рубрикой
+     * Boot метод для автогенерации key
      */
-    public function rubric(): BelongsTo
+    protected static function boot()
     {
-        return $this->belongsTo(Rubric::class);
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->key)) {
+                $model->key = (string) Str::ulid();
+            }
+        });
     }
 
     /**
-     * Связь с проектами мебели
+     * Связь с категорией
      */
-    public function mebelProjects(): HasMany
+    public function category(): BelongsTo
     {
-        return $this->hasMany(MebelProject::class);
+        return $this->belongsTo(Category::class);
     }
 
     /**

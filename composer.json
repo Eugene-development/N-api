@@ -10,6 +10,7 @@
         "cviebrock/eloquent-sluggable": "^12.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "mll-lab/graphql-php-scalars": "^6.4",
         "nuwave/lighthouse": "^6.64"
     },
     "require-dev": {
