@@ -13,7 +13,6 @@ Route::get('/health', function () {
 });
 
 
-
 Route::get('/test-db', function () {
     try {
         DB::connection()->getPdo();

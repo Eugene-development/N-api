@@ -8,39 +8,29 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Str;
 
-class MebelProject extends Model
+class Brand extends Model
 {
     use HasFactory, HasUlids, SoftDeletes, Sluggable;
 
     /**
      * Таблица модели
      */
-    protected $table = 'mebel_projects';
+    protected $table = 'brands';
 
     /**
      * Поля, доступные для массового заполнения
      */
     protected $fillable = [
-        'id',  // Позволяет создавать с предопределённым ULID
-        'key',
-        'category_id',
         'value',
         'slug',
+        'rubric_id',
         'description',
-        'short_description',
-        'price',
-        'old_price',
-        'meta',
+        'logo',
+        'country',
+        'website',
         'is_active',
-        'is_featured',
-        'is_new',
         'sort_order',
-        'created_by',
-        'updated_by',
-        'deleted_by',
     ];
 
     /**
@@ -50,12 +40,7 @@ class MebelProject extends Model
     {
         return [
             'is_active' => 'boolean',
-            'is_featured' => 'boolean',
-            'is_new' => 'boolean',
             'sort_order' => 'integer',
-            'price' => 'decimal:2',
-            'old_price' => 'decimal:2',
-            'meta' => 'array',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
@@ -67,31 +52,15 @@ class MebelProject extends Model
      */
     protected $attributes = [
         'is_active' => true,
-        'is_featured' => false,
-        'is_new' => false,
         'sort_order' => 0,
     ];
 
     /**
-     * Boot метод для автогенерации key
+     * Связь с рубрикой
      */
-    protected static function boot()
+    public function rubric(): BelongsTo
     {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->key)) {
-                $model->key = (string) Str::ulid();
-            }
-        });
-    }
-
-    /**
-     * Связь с категорией
-     */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Rubric::class);
     }
 
     /**
@@ -108,10 +77,16 @@ class MebelProject extends Model
     }
 
     /**
-     * Связь с изображениями (полиморфное отношение)
+     * Генерация уникального key при создании
      */
-    public function images(): MorphMany
+    protected static function boot()
     {
-        return $this->morphMany(Image::class, 'parentable')->orderBy('sort_order');
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->key)) {
+                $model->key = (string) \Illuminate\Support\Str::ulid();
+            }
+        });
     }
 }

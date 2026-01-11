@@ -70,6 +70,22 @@ type Query {
       "Include soft deleted items."
       trashed: Trashed @trashed
     ): [MebelProject!]! @all @orderBy(column: "sort_order", direction: ASC)
+
+    "Find a single brand by ID."
+    brand(id: ID! @eq): Brand @find
+
+    "Find a brand by slug."
+    brandBySlug(slug: String! @eq): Brand @find
+
+    "List all brands."
+    brands(
+      "Filter by active status."
+      is_active: Boolean @eq
+      "Filter by rubric ID."
+      rubric_id: ID @eq
+      "Include soft deleted items."
+      trashed: Trashed @trashed
+    ): [Brand!]! @all @orderBy(column: "sort_order", direction: ASC)
 }
 
 "Mutations for modifying data."
@@ -118,6 +134,21 @@ type Mutation {
 
     "Force delete a mebel project."
     forceDeleteMebelProject(id: ID! @whereKey): MebelProject @forceDelete
+
+    "Create a new brand."
+    createBrand(input: CreateBrandInput! @spread): Brand @create
+
+    "Update an existing brand."
+    updateBrand(id: ID!, input: UpdateBrandInput! @spread): Brand @update
+
+    "Soft delete a brand."
+    deleteBrand(id: ID! @whereKey): Brand @delete
+
+    "Restore a soft deleted brand."
+    restoreBrand(id: ID! @whereKey): Brand @restore
+
+    "Force delete a brand."
+    forceDeleteBrand(id: ID! @whereKey): Brand @forceDelete
 }
 
 "Input for creating a category."
@@ -314,10 +345,15 @@ type MebelProject {
 
     "When the project was soft deleted."
     deleted_at: DateTime
+
+    "Images of the project."
+    images: [Image!]! @morphMany
 }
 
 "Input for creating a mebel project."
 input CreateMebelProjectInput {
+    "Optional ID (ULID). If provided, the project will be created with this ID."
+    id: ID
     category_id: ID! @rules(apply: ["required", "exists:categories,id"])
     value: String! @rules(apply: ["required", "string", "max:255"])
     slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
@@ -346,4 +382,123 @@ input UpdateMebelProjectInput {
     is_featured: Boolean
     is_new: Boolean
     sort_order: Int
+}
+
+"Brand for home appliances catalog."
+type Brand {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Unique key for external references."
+    key: ID!
+
+    "ID of the parent rubric."
+    rubric_id: ID
+
+    "Parent rubric."
+    rubric: Rubric @belongsTo
+
+    "Name of the brand."
+    value: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Description of the brand."
+    description: String
+
+    "Logo URL."
+    logo: String
+
+    "Country of origin."
+    country: String
+
+    "Official website URL."
+    website: String
+
+    "Whether the brand is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the brand was created."
+    created_at: DateTime!
+
+    "When the brand was last updated."
+    updated_at: DateTime!
+
+    "When the brand was soft deleted."
+    deleted_at: DateTime
+}
+
+"Input for creating a brand."
+input CreateBrandInput {
+    rubric_id: ID @rules(apply: ["exists:rubrics,id"])
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    logo: String @rules(apply: ["nullable", "url", "max:500"])
+    country: String @rules(apply: ["nullable", "string", "max:100"])
+    website: String @rules(apply: ["nullable", "url", "max:500"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a brand."
+input UpdateBrandInput {
+    rubric_id: ID @rules(apply: ["exists:rubrics,id"])
+    value: String @rules(apply: ["string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    logo: String @rules(apply: ["nullable", "url", "max:500"])
+    country: String @rules(apply: ["nullable", "string", "max:100"])
+    website: String @rules(apply: ["nullable", "url", "max:500"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Image attached to any entity via polymorphic relation."
+type Image {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Unique key for external references."
+    key: ID!
+
+    "Whether the image is active."
+    is_active: Boolean!
+
+    "SHA256 hash of the file."
+    hash: String!
+
+    "Filename in storage."
+    filename: String!
+
+    "Original filename from upload."
+    original_name: String
+
+    "MIME type of the file."
+    mime_type: String
+
+    "File size in bytes."
+    size: Int
+
+    "Path in storage."
+    path: String
+
+    "Full URL to the image."
+    url: String
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the image was created."
+    created_at: DateTime!
+
+    "When the image was last updated."
+    updated_at: DateTime!
+
+    "When the image was soft deleted."
+    deleted_at: DateTime
 }
