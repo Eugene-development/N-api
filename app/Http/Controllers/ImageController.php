@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\File;
+use Intervention\Image\Laravel\Facades\Image as ImageManager;
 
 class ImageController extends Controller
 {
@@ -58,18 +59,56 @@ class ImageController extends Controller
         $errors = [];
         $disk = Storage::disk('s3');
 
+        // Настройки сжатия
+        $maxWidth = 1920;   // Максимальная ширина
+        $maxHeight = 1920;  // Максимальная высота
+        $quality = 85;      // Качество JPEG/WebP (1-100)
+
         foreach ($filesToUpload as $index => $file) {
             try {
+                // Обрабатываем изображение через Intervention
+                $image = ImageManager::read($file->getPathname());
+                
+                // Получаем размеры
+                $width = $image->width();
+                $height = $image->height();
+                
+                // Ресайз если изображение больше максимальных размеров
+                if ($width > $maxWidth || $height > $maxHeight) {
+                    $image->scaleDown(width: $maxWidth, height: $maxHeight);
+                }
+                
+                // Определяем формат вывода
+                $originalExtension = strtolower($file->getClientOriginalExtension());
+                $mimeType = $file->getMimeType();
+                
+                // Конвертируем в WebP для лучшего сжатия (кроме GIF с анимацией)
+                if ($originalExtension === 'gif') {
+                    // GIF оставляем как есть (может быть анимированным)
+                    $extension = 'gif';
+                    $encodedImage = $image->toGif();
+                } else {
+                    // Остальные конвертируем в WebP
+                    $extension = 'webp';
+                    $encodedImage = $image->toWebp($quality);
+                }
+                
                 // Генерируем уникальное имя файла
-                $extension = $file->getClientOriginalExtension();
                 $filename = Str::ulid() . '.' . $extension;
                 
                 // Путь в бакете: images/{parentable_type}/{parentable_id}/{filename}
                 $typePath = Str::snake(class_basename($parentableType));
                 $path = "images/{$typePath}/{$parentableId}/{$filename}";
 
+                // Получаем размер сжатого изображения
+                $compressedContent = (string) $encodedImage;
+                $compressedSize = strlen($compressedContent);
+                
+                // Вычисляем хэш сжатого файла
+                $hash = hash('sha256', $compressedContent);
+
                 // Загружаем в S3
-                $uploaded = $disk->put($path, file_get_contents($file), 'public');
+                $uploaded = $disk->put($path, $compressedContent, 'public');
                 
                 if (!$uploaded) {
                     $errors[] = "Failed to upload {$file->getClientOriginalName()}";
@@ -77,20 +116,13 @@ class ImageController extends Controller
                     continue;
                 }
 
-                // Проверяем, что файл действительно существует
-                if (!$disk->exists($path)) {
-                    $errors[] = "File not found after upload: {$file->getClientOriginalName()}";
-                    \Log::error('File not found in S3 after upload', ['path' => $path]);
-                    continue;
-                }
-
-                // Вычисляем хэш файла
-                $hash = hash_file('sha256', $file->getRealPath());
-
                 // Получаем следующий sort_order
                 $nextSortOrder = Image::where('parentable_type', $parentableType)
                     ->where('parentable_id', $parentableId)
                     ->max('sort_order') + 1;
+
+                // Определяем mime-type для сжатого файла
+                $compressedMimeType = $extension === 'webp' ? 'image/webp' : 'image/gif';
 
                 // Создаём запись в БД только после успешной загрузки
                 $image = Image::create([
@@ -99,12 +131,23 @@ class ImageController extends Controller
                     'hash' => $hash,
                     'filename' => $filename,
                     'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
+                    'mime_type' => $compressedMimeType,
+                    'size' => $compressedSize,  // Размер сжатого файла
                     'path' => $path,
                     'parentable_type' => $parentableType,
                     'parentable_id' => $parentableId,
                     'sort_order' => $nextSortOrder,
+                ]);
+
+                // Логируем сжатие
+                $originalSize = $file->getSize();
+                $compressionRatio = $originalSize > 0 ? round((1 - $compressedSize / $originalSize) * 100, 1) : 0;
+                \Log::info('Image compressed', [
+                    'original' => $file->getClientOriginalName(),
+                    'original_size' => $originalSize,
+                    'compressed_size' => $compressedSize,
+                    'compression' => $compressionRatio . '%',
+                    'format' => $extension,
                 ]);
 
                 $uploadedImages[] = $image;
