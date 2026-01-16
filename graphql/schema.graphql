@@ -86,6 +86,22 @@ type Query {
       "Include soft deleted items."
       trashed: Trashed @trashed
     ): [Brand!]! @all @orderBy(column: "sort_order", direction: ASC)
+
+    "Find a single shop by ID."
+    shop(id: ID! @eq): Shop @find
+
+    "Find a shop by slug."
+    shopBySlug(slug: String! @eq): Shop @find
+
+    "List all shops."
+    shops(
+      "Filter by active status."
+      is_active: Boolean @eq
+      "Filter by rubric ID."
+      rubric_id: ID @eq
+      "Include soft deleted items."
+      trashed: Trashed @trashed
+    ): [Shop!]! @all @orderBy(column: "sort_order", direction: ASC)
 }
 
 "Mutations for modifying data."
@@ -149,8 +165,49 @@ type Mutation {
 
     "Force delete a brand."
     forceDeleteBrand(id: ID! @whereKey): Brand @forceDelete
-}
 
+    "Create a new shop."
+    createShop(input: CreateShopInput! @spread): Shop @create
+
+    "Update an existing shop."
+    updateShop(id: ID!, input: UpdateShopInput! @spread): Shop @update
+
+    "Soft delete a shop."
+    deleteShop(id: ID! @whereKey): Shop @delete
+
+    "Restore a soft deleted shop."
+    restoreShop(id: ID! @whereKey): Shop @restore
+
+    "Force delete a shop."
+    forceDeleteShop(id: ID! @whereKey): Shop @forceDelete
+
+    "Create a new shop category."
+    createShopCategory(input: CreateShopCategoryInput! @spread): ShopCategory @create
+
+    "Update an existing shop category."
+    updateShopCategory(id: ID!, input: UpdateShopCategoryInput! @spread): ShopCategory @update
+
+    "Delete a shop category."
+    deleteShopCategory(id: ID! @whereKey): ShopCategory @delete
+
+    "Create a new shop brand."
+    createShopBrand(input: CreateShopBrandInput! @spread): ShopBrand @create
+
+    "Update an existing shop brand."
+    updateShopBrand(id: ID!, input: UpdateShopBrandInput! @spread): ShopBrand @update
+
+    "Delete a shop brand."
+    deleteShopBrand(id: ID! @whereKey): ShopBrand @delete
+
+    "Create a new shop city."
+    createShopCity(input: CreateShopCityInput! @spread): ShopCity @create
+
+    "Update an existing shop city."
+    updateShopCity(id: ID!, input: UpdateShopCityInput! @spread): ShopCity @update
+
+    "Delete a shop city."
+    deleteShopCity(id: ID! @whereKey): ShopCity @delete
+}
 "Input for creating a category."
 input CreateCategoryInput {
     value: String! @rules(apply: ["required", "string", "max:255"])
@@ -501,4 +558,222 @@ type Image {
 
     "When the image was soft deleted."
     deleted_at: DateTime
+}
+
+"Shop (online store) for furniture and accessories rubrics."
+type Shop {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Unique key for external references."
+    key: ID!
+
+    "ID of the parent rubric."
+    rubric_id: ID
+
+    "Parent rubric."
+    rubric: Rubric @belongsTo
+
+    "Name of the shop."
+    value: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Description of the shop."
+    description: String
+
+    "Logo URL."
+    logo: String
+
+    "Website URL."
+    website: String
+
+    "Phone number."
+    phone: String
+
+    "Email address."
+    email: String
+
+    "Whether the shop is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "Categories of products the shop sells."
+    categories: [ShopCategory!]! @hasMany
+
+    "Brands the shop works with."
+    brands: [ShopBrand!]! @hasMany
+
+    "Cities where the shop is present."
+    cities: [ShopCity!]! @hasMany
+
+    "When the shop was created."
+    created_at: DateTime!
+
+    "When the shop was last updated."
+    updated_at: DateTime!
+
+    "When the shop was soft deleted."
+    deleted_at: DateTime
+}
+
+"Category of products sold by a shop."
+type ShopCategory {
+    "Unique ULID identifier."
+    id: ID!
+
+    "ID of the parent shop."
+    shop_id: ID!
+
+    "Name of the category."
+    value: String!
+
+    "URL-friendly slug."
+    slug: String
+
+    "Whether the category is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the category was created."
+    created_at: DateTime!
+
+    "When the category was last updated."
+    updated_at: DateTime!
+}
+
+"Brand that a shop works with."
+type ShopBrand {
+    "Unique ULID identifier."
+    id: ID!
+
+    "ID of the parent shop."
+    shop_id: ID!
+
+    "Name of the brand."
+    value: String!
+
+    "Logo URL."
+    logo: String
+
+    "Whether the brand is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the brand was created."
+    created_at: DateTime!
+
+    "When the brand was last updated."
+    updated_at: DateTime!
+}
+
+"City where a shop is present."
+type ShopCity {
+    "Unique ULID identifier."
+    id: ID!
+
+    "ID of the parent shop."
+    shop_id: ID!
+
+    "Name of the city."
+    city_name: String!
+
+    "Whether the city is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the city was created."
+    created_at: DateTime!
+
+    "When the city was last updated."
+    updated_at: DateTime!
+}
+
+"Input for creating a shop."
+input CreateShopInput {
+    rubric_id: ID @rules(apply: ["exists:rubrics,id"])
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    logo: String @rules(apply: ["nullable", "url", "max:500"])
+    website: String @rules(apply: ["nullable", "url", "max:500"])
+    phone: String @rules(apply: ["nullable", "string", "max:50"])
+    email: String @rules(apply: ["nullable", "email", "max:255"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a shop."
+input UpdateShopInput {
+    rubric_id: ID @rules(apply: ["exists:rubrics,id"])
+    value: String @rules(apply: ["string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String
+    logo: String @rules(apply: ["nullable", "url", "max:500"])
+    website: String @rules(apply: ["nullable", "url", "max:500"])
+    phone: String @rules(apply: ["nullable", "string", "max:50"])
+    email: String @rules(apply: ["nullable", "email", "max:255"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for creating a shop category."
+input CreateShopCategoryInput {
+    shop_id: ID! @rules(apply: ["required", "exists:shops,id"])
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    slug: String @rules(apply: ["nullable", "string", "max:255", "alpha_dash"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a shop category."
+input UpdateShopCategoryInput {
+    shop_id: ID @rules(apply: ["exists:shops,id"])
+    value: String @rules(apply: ["string", "max:255"])
+    slug: String @rules(apply: ["nullable", "string", "max:255", "alpha_dash"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for creating a shop brand."
+input CreateShopBrandInput {
+    shop_id: ID! @rules(apply: ["required", "exists:shops,id"])
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    logo: String @rules(apply: ["nullable", "url", "max:500"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a shop brand."
+input UpdateShopBrandInput {
+    shop_id: ID @rules(apply: ["exists:shops,id"])
+    value: String @rules(apply: ["string", "max:255"])
+    logo: String @rules(apply: ["nullable", "url", "max:500"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for creating a shop city."
+input CreateShopCityInput {
+    shop_id: ID! @rules(apply: ["required", "exists:shops,id"])
+    city_name: String! @rules(apply: ["required", "string", "max:255"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a shop city."
+input UpdateShopCityInput {
+    shop_id: ID @rules(apply: ["exists:shops,id"])
+    city_name: String @rules(apply: ["string", "max:255"])
+    is_active: Boolean
+    sort_order: Int
 }
