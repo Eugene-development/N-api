@@ -102,6 +102,17 @@ type Query {
       "Include soft deleted items."
       trashed: Trashed @trashed
     ): [Shop!]! @all @orderBy(column: "sort_order", direction: ASC)
+
+    "Find a single service request by ID."
+    serviceRequest(id: ID! @eq): ServiceRequest @find
+
+    "List service requests."
+    serviceRequests(
+      "Filter by service type."
+      service_type: String @eq
+      "Filter by status."
+      status: String @eq
+    ): [ServiceRequest!]! @all @orderBy(column: "created_at", direction: DESC)
 }
 
 "Mutations for modifying data."
@@ -207,6 +218,12 @@ type Mutation {
 
     "Delete a shop city."
     deleteShopCity(id: ID! @whereKey): ShopCity @delete
+
+    "Create a new service request."
+    createServiceRequest(input: CreateServiceRequestInput! @spread): ServiceRequest @create
+
+    "Update service request status."
+    updateServiceRequest(id: ID!, input: UpdateServiceRequestInput! @spread): ServiceRequest @update
 }
 "Input for creating a category."
 input CreateCategoryInput {
@@ -776,4 +793,56 @@ input UpdateShopCityInput {
     city_name: String @rules(apply: ["string", "max:255"])
     is_active: Boolean
     sort_order: Int
+}
+
+"Service request for ordering services."
+type ServiceRequest {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Type of service."
+    service_type: String!
+
+    "Client name."
+    name: String!
+
+    "Client phone number."
+    phone: String!
+
+    "Optional message from client."
+    message: String
+
+    "Status of the request."
+    status: String!
+
+    "IP address of the client."
+    ip_address: String
+
+    "User agent of the client browser."
+    user_agent: String
+
+    "Source URL where request was submitted."
+    source_url: String
+
+    "When the request was created."
+    created_at: DateTime!
+
+    "When the request was last updated."
+    updated_at: DateTime!
+}
+
+"Input for creating a service request."
+input CreateServiceRequestInput {
+    service_type: String! @rules(apply: ["required", "string", "in:consultation,design-project,furniture-project,assembly,measurement"])
+    name: String! @rules(apply: ["required", "string", "max:255"])
+    phone: String! @rules(apply: ["required", "string", "max:50"])
+    message: String @rules(apply: ["nullable", "string", "max:2000"])
+    ip_address: String @rules(apply: ["nullable", "string", "max:45"])
+    user_agent: String @rules(apply: ["nullable", "string", "max:500"])
+    source_url: String @rules(apply: ["nullable", "string", "max:500"])
+}
+
+"Input for updating a service request."
+input UpdateServiceRequestInput {
+    status: String @rules(apply: ["string", "in:new,processed,completed,cancelled"])
 }
