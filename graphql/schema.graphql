@@ -113,6 +113,22 @@ type Query {
       "Filter by status."
       status: String @eq
     ): [ServiceRequest!]! @all @orderBy(column: "created_at", direction: DESC)
+
+    "Find a single countertop manufacturer by ID."
+    countertopManufacturer(id: ID! @eq): CountertopManufacturer @find
+
+    "Find a countertop manufacturer by slug."
+    countertopManufacturerBySlug(slug: String! @eq): CountertopManufacturer @find
+
+    "List all countertop manufacturers."
+    countertopManufacturers(
+      "Filter by active status."
+      is_active: Boolean @eq
+      "Filter by category ID."
+      category_id: ID @eq
+      "Include soft deleted items."
+      trashed: Trashed @trashed
+    ): [CountertopManufacturer!]! @all @orderBy(column: "sort_order", direction: ASC)
 }
 
 "Mutations for modifying data."
@@ -224,6 +240,18 @@ type Mutation {
 
     "Update service request status."
     updateServiceRequest(id: ID!, input: UpdateServiceRequestInput! @spread): ServiceRequest @update
+
+    "Create a new countertop manufacturer."
+    createCountertopManufacturer(input: CreateCountertopManufacturerInput! @spread): CountertopManufacturer @create
+
+    "Update an existing countertop manufacturer."
+    updateCountertopManufacturer(id: ID!, input: UpdateCountertopManufacturerInput! @spread): CountertopManufacturer @update
+
+    "Soft delete a countertop manufacturer."
+    deleteCountertopManufacturer(id: ID! @whereKey): CountertopManufacturer @delete
+
+    "Restore a soft deleted countertop manufacturer."
+    restoreCountertopManufacturer(id: ID! @whereKey): CountertopManufacturer @restore
 }
 "Input for creating a category."
 input CreateCategoryInput {
@@ -845,4 +873,89 @@ input CreateServiceRequestInput {
 "Input for updating a service request."
 input UpdateServiceRequestInput {
     status: String @rules(apply: ["string", "in:new,processed,completed,cancelled"])
+}
+
+"Countertop manufacturer for stoleshnica rubric."
+type CountertopManufacturer {
+    "Unique ULID identifier."
+    id: ID!
+
+    "Unique key for external references."
+    key: ID!
+
+    "ID of the parent category."
+    category_id: ID!
+
+    "Parent category (столешница)."
+    category: Category @belongsTo
+
+    "Name of the manufacturer."
+    value: String!
+
+    "URL-friendly slug."
+    slug: String!
+
+    "Description of the manufacturer."
+    description: String
+
+    "Logo URL."
+    logo: String
+
+    "Website URL of the supplier."
+    website: String
+
+    "Phone number of the supplier."
+    phone: String
+
+    "Email of the supplier."
+    email: String
+
+    "Country of origin."
+    country: String
+
+    "Whether the manufacturer is active."
+    is_active: Boolean!
+
+    "Sort order for display."
+    sort_order: Int!
+
+    "When the manufacturer was created."
+    created_at: DateTime!
+
+    "When the manufacturer was last updated."
+    updated_at: DateTime!
+
+    "When the manufacturer was soft deleted."
+    deleted_at: DateTime
+}
+
+"Input for creating a countertop manufacturer."
+input CreateCountertopManufacturerInput {
+    key: ID @rules(apply: ["string", "max:26"])
+    category_id: ID! @rules(apply: ["required", "exists:categories,id"])
+    value: String! @rules(apply: ["required", "string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String @rules(apply: ["nullable", "string"])
+    logo: String @rules(apply: ["nullable", "string", "max:500"])
+    website: String @rules(apply: ["nullable", "string", "max:500", "url"])
+    phone: String @rules(apply: ["nullable", "string", "max:50"])
+    email: String @rules(apply: ["nullable", "string", "max:255", "email"])
+    country: String @rules(apply: ["nullable", "string", "max:100"])
+    is_active: Boolean
+    sort_order: Int
+}
+
+"Input for updating a countertop manufacturer."
+input UpdateCountertopManufacturerInput {
+    category_id: ID @rules(apply: ["exists:categories,id"])
+    value: String @rules(apply: ["string", "max:255"])
+    slug: String @rules(apply: ["string", "max:255", "alpha_dash"])
+    description: String @rules(apply: ["nullable", "string"])
+    logo: String @rules(apply: ["nullable", "string", "max:500"])
+    website: String @rules(apply: ["nullable", "string", "max:500", "url"])
+    phone: String @rules(apply: ["nullable", "string", "max:50"])
+    email: String @rules(apply: ["nullable", "string", "max:255", "email"])
+    country: String @rules(apply: ["nullable", "string", "max:100"])
+    is_active: Boolean
+    sort_order: Int
 }
