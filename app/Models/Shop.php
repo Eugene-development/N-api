@@ -66,7 +66,7 @@ class Shop extends Model
     }
 
     /**
-     * Связь с категориями товаров магазина
+     * Связь с категориями магазина
      */
     public function categories(): HasMany
     {

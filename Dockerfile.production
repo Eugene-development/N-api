@@ -10,7 +10,16 @@ FROM php:8.4-fpm-alpine AS production
 # Install system dependencies
 RUN apk add --no-cache \
     su-exec \
-    && docker-php-ext-install pdo pdo_mysql
+    libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    giflib-dev \
+    freetype-dev \
+    && docker-php-ext-configure gd \
+    --with-jpeg \
+    --with-webp \
+    --with-freetype \
+    && docker-php-ext-install pdo pdo_mysql gd
 
 # Копируем скрипт в образ
 COPY entrypoint.sh /entrypoint.sh
