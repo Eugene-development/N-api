@@ -66,6 +66,7 @@ class ServiceRequest extends Model
         'furniture-project',
         'assembly',
         'measurement',
+        'partnership',
     ];
 
     /**
@@ -89,6 +90,7 @@ class ServiceRequest extends Model
             'furniture-project' => 'Проект мебели',
             'assembly' => 'Сборка мебели',
             'measurement' => 'Замер помещения',
+            'partnership' => 'Партнёрство',
             default => $type,
         };
     }

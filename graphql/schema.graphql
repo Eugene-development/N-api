@@ -861,7 +861,7 @@ type ServiceRequest {
 
 "Input for creating a service request."
 input CreateServiceRequestInput {
-    service_type: String! @rules(apply: ["required", "string", "in:consultation,design-project,furniture-project,assembly,measurement"])
+    service_type: String! @rules(apply: ["required", "string", "in:consultation,design-project,furniture-project,assembly,measurement,partnership"])
     name: String! @rules(apply: ["required", "string", "max:255"])
     phone: String! @rules(apply: ["required", "string", "max:50"])
     message: String @rules(apply: ["nullable", "string", "max:2000"])
