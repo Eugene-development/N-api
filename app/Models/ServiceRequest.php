@@ -37,6 +37,7 @@ class ServiceRequest extends Model
         'ip_address',
         'user_agent',
         'source_url',
+        'city',
     ];
 
     /**

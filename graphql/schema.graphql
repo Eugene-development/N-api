@@ -852,6 +852,9 @@ type ServiceRequest {
     "Source URL where request was submitted."
     source_url: String
 
+    "City of the client."
+    city: String
+
     "When the request was created."
     created_at: DateTime!
 
@@ -868,6 +871,7 @@ input CreateServiceRequestInput {
     ip_address: String @rules(apply: ["nullable", "string", "max:45"])
     user_agent: String @rules(apply: ["nullable", "string", "max:500"])
     source_url: String @rules(apply: ["nullable", "string", "max:500"])
+    city: String @rules(apply: ["nullable", "string", "max:100"])
 }
 
 "Input for updating a service request."
