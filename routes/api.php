@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\LogoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,4 +22,10 @@ Route::prefix('images')->group(function () {
     Route::delete('/{id}', [ImageController::class, 'destroy']);
     Route::post('/reorder', [ImageController::class, 'reorder']);
     Route::patch('/{id}/toggle-active', [ImageController::class, 'toggleActive']);
+});
+
+// API для работы с логотипами
+Route::prefix('logos')->group(function () {
+    Route::post('/upload', [LogoController::class, 'upload']);
+    Route::delete('/', [LogoController::class, 'delete']);
 });
