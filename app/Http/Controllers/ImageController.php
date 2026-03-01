@@ -304,8 +304,8 @@ class ImageController extends Controller
             $image->place(
                 $watermark,
                 'bottom-left',
-                5,   // отступ по X
-                10,  // отступ по Y
+                0,   // отступ по X
+                1,  // отступ по Y
                 100  // без прозрачности
             );
 
