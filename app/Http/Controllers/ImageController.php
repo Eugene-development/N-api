@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\File;
@@ -16,6 +17,11 @@ class ImageController extends Controller
      * Максимальное количество изображений для одной сущности
      */
     private const MAX_IMAGES = 8;
+
+    /**
+     * Путь к файлу водяного знака (относительно storage/app)
+     */
+    private const WATERMARK_PATH = 'watermark/logo.png';
 
     /**
      * Загрузить изображения
@@ -77,6 +83,9 @@ class ImageController extends Controller
                 if ($width > $maxWidth || $height > $maxHeight) {
                     $image->scaleDown(width: $maxWidth, height: $maxHeight);
                 }
+
+                // Накладываем водяной знак (логотип)
+                $this->applyWatermark($image);
                 
                 // Определяем формат вывода
                 $originalExtension = strtolower($file->getClientOriginalExtension());
@@ -264,5 +273,68 @@ class ImageController extends Controller
             'success' => true,
             'is_active' => $image->is_active,
         ]);
+    }
+
+    /**
+     * Наложить водяной знак (логотип) на изображение
+     */
+    private function applyWatermark($image): void
+    {
+        try {
+            $watermarkPath = $this->getWatermarkPath();
+
+            if (!$watermarkPath) {
+                \Log::warning('Watermark file not available, skipping watermark');
+                return;
+            }
+
+            // Читаем логотип
+            $watermark = ImageManager::read($watermarkPath);
+
+            // Масштабируем логотип — 15% от ширины загружаемого изображения
+            $imageWidth = $image->width();
+            $watermarkWidth = (int) round($imageWidth * 0.15);
+
+            // Минимальная ширина водяного знака — 50px
+            $watermarkWidth = max($watermarkWidth, 50);
+
+            $watermark->scaleDown(width: $watermarkWidth);
+
+            // Накладываем логотип в левый нижний угол с отступом и прозрачностью
+            $image->place(
+                $watermark,
+                'bottom-left',
+                5,   // отступ по X
+                10,  // отступ по Y
+                100  // без прозрачности
+            );
+
+            \Log::info('Watermark applied successfully', [
+                'watermark_width' => $watermarkWidth,
+                'image_width' => $imageWidth,
+            ]);
+
+        } catch (\Exception $e) {
+            // Не прерываем загрузку если водяной знак не удалось наложить
+            \Log::error('Failed to apply watermark', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Получить путь к файлу водяного знака
+     */
+    private function getWatermarkPath(): ?string
+    {
+        $localPath = storage_path('app/' . self::WATERMARK_PATH);
+
+        if (file_exists($localPath)) {
+            return $localPath;
+        }
+
+        \Log::error('Watermark file not found', ['path' => $localPath]);
+        return null;
     }
 }
