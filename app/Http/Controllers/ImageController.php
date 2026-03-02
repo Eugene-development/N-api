@@ -293,7 +293,7 @@ class ImageController extends Controller
 
             // Масштабируем логотип — 15% от ширины загружаемого изображения
             $imageWidth = $image->width();
-            $watermarkWidth = (int) round($imageWidth * 0.15);
+            $watermarkWidth = (int) round($imageWidth * 0.075);
 
             // Минимальная ширина водяного знака — 50px
             $watermarkWidth = max($watermarkWidth, 50);
@@ -304,8 +304,8 @@ class ImageController extends Controller
             $image->place(
                 $watermark,
                 'bottom-left',
-                0,   // отступ по X
-                1,  // отступ по Y
+                27,   // отступ по X
+                27,  // отступ по Y
                 100  // без прозрачности
             );
 
